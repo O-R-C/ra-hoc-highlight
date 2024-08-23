@@ -1,75 +1,134 @@
 /* eslint-disable react/prop-types */
 
-import moment from 'moment/min/moment-with-locales'
-moment.locale('ru')
-
-function DateTimePretty(Component) {
-  return function newDate(props) {
-    return (
-      <Component
-        {...props}
-        date={moment(props.date).fromNow()}
-      />
-    )
-  }
+function New(props) {
+  return (
+    <div className='wrap-item wrap-item-new'>
+      <span className='label'>New!</span>
+      {props.children}
+    </div>
+  )
 }
 
-function DateTime(props) {
-  return <p className='date'>{props.date}</p>
+function Popular(props) {
+  return (
+    <div className='wrap-item wrap-item-popular'>
+      <span className='label'>Popular!</span>
+      {props.children}
+    </div>
+  )
 }
 
-const PrettyDate = DateTimePretty(DateTime)
+function Article(props) {
+  return (
+    <div className='item item-article'>
+      <h3>
+        <a href='#'>{props.title}</a>
+      </h3>
+      <p className='views'>Прочтений: {props.views}</p>
+    </div>
+  )
+}
 
 function Video(props) {
   return (
-    <div className='video'>
+    <div className='item item-video'>
       <iframe
         src={props.url}
         allow='autoplay; encrypted-media'
         allowFullScreen
       ></iframe>
-      <PrettyDate date={props.date} />
+      <p className='views'>Просмотров: {props.views}</p>
     </div>
   )
 }
 
-function VideoList(props) {
-  return props.list.map((item) => (
-    <Video
-      key={item.url}
-      url={item.url}
-      date={item.date}
-    />
-  ))
+/**
+ * A higher-order component that wraps the given Component with a New or Popular component
+ * based on the views count of the props.
+ *
+ * @param {React.Component} Component - The component to be wrapped
+ * @return {function} A function that returns the wrapped component
+ */
+function ItemAddPopular(Component) {
+  return function ItemWithPopular(props) {
+    if (props.views < 100) {
+      return (
+        <New>
+          <Component {...props} />
+        </New>
+      )
+    }
+
+    if (props.views > 1000) {
+      return (
+        <Popular>
+          <Component {...props} />
+        </Popular>
+      )
+    }
+
+    return <Component {...props} />
+  }
+}
+
+const VideoWithPopular = ItemAddPopular(Video)
+const ArticleWithPopular = ItemAddPopular(Article)
+
+function List(props) {
+  return props.list.map((item) => {
+    switch (item.type) {
+      case 'video':
+        return (
+          <VideoWithPopular
+            key={item.url || item.title}
+            {...item}
+          />
+        )
+
+      case 'article':
+        return (
+          <ArticleWithPopular
+            key={item.url || item.title}
+            {...item}
+          />
+        )
+    }
+  })
 }
 
 export default function App() {
   const list = [
     {
+      type: 'video',
       url: 'https://www.youtube.com/embed/rN6nlNC9WQA?rel=0&amp;controls=0&amp;showinfo=0',
-      date: moment().format('YYYY-MM-DD HH:mm:ss'),
+      views: 50,
     },
     {
+      type: 'video',
       url: 'https://www.youtube.com/embed/dVkK36KOcqs?rel=0&amp;controls=0&amp;showinfo=0',
-      date: moment().add(-10, 'minutes').format('YYYY-MM-DD HH:mm:ss'),
+      views: 12,
     },
     {
-      url: 'https://www.youtube.com/embed/xGRjCa49C6U?rel=0&amp;controls=0&amp;showinfo=0',
-      date: moment().add(-1, 'hours').format('YYYY-MM-DD HH:mm:ss'),
+      type: 'article',
+      title: 'Невероятные события в неизвестном поселке...',
+      views: 175,
     },
     {
-      url: 'https://www.youtube.com/embed/RK1K2bCg4J8?rel=0&amp;controls=0&amp;showinfo=0',
-      date: moment().add(-1, 'days').format('YYYY-MM-DD HH:mm:ss'),
+      type: 'article',
+      title: 'Секретные данные были раскрыты!',
+      views: 1532,
     },
     {
+      type: 'video',
       url: 'https://www.youtube.com/embed/TKmGU77INaM?rel=0&amp;controls=0&amp;showinfo=0',
-      date: moment().add(-1, 'month').format('YYYY-MM-DD HH:mm:ss'),
+      views: 4253,
     },
     {
-      url: 'https://www.youtube.com/embed/TxbE79-1OSI?rel=0&amp;controls=0&amp;showinfo=0',
-      date: moment().add(-1, 'years').format('YYYY-MM-DD HH:mm:ss'),
+      type: 'article',
+      title: 'Кот Бегемот обладает невероятной...',
+      views: 12,
     },
   ]
 
-  return <VideoList list={list} />
+  return <List list={list} />
 }
